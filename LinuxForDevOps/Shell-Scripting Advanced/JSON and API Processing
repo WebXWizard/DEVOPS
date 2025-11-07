@@ -1,0 +1,59 @@
+#!/bin/bash
+
+# JSON processing with jq (requires jq to be installed)
+api_request() {
+    local endpoint="$1"
+    local method="${2:-GET}"
+    local data="$3"
+    local headers="$4"
+    local auth_token="$5"
+    
+    local curl_options="-s -X $method"
+    
+    [ -n "$data" ] && curl_options="$curl_options -d '$data'"
+    [ -n "$headers" ] && curl_options="$curl_options -H '$headers'"
+    [ -n "$auth_token" ] && curl_options="$curl_options -H 'Authorization: Bearer $auth_token'"
+    
+    eval "curl $curl_options '$endpoint'"
+}
+
+# Parse JSON response
+get_json_value() {
+    local json_data="$1"
+    local key="$2"
+    
+    if ! command -v jq &> /dev/null; then
+        log_warn "jq not found, using basic parsing"
+        echo "$json_data" | grep -o "\"$key\"[[:space:]]*:[[:space:]]*\"[^\"]*\"" | cut -d'"' -f4
+    else
+        echo "$json_data" | jq -r ".$key"
+    fi
+}
+
+# API error handling
+handle_api_response() {
+    local response="$1"
+    local http_code="$2"
+    
+    case $http_code in
+        200|201)
+            log_info "API request successful"
+            echo "$response"
+            ;;
+        400)
+            error_exit "Bad Request: $response" $E_INVALID_INPUT
+            ;;
+        401|403)
+            error_exit "Authentication failed: $response" $E_PERMISSION_DENIED
+            ;;
+        404)
+            error_exit "Resource not found: $response" $E_FILE_NOT_FOUND
+            ;;
+        500)
+            error_exit "Server error: $response" $E_SYSTEM_ERROR
+            ;;
+        *)
+            error_exit "Unknown HTTP code $http_code: $response" $E_SYSTEM_ERROR
+            ;;
+    esac
+}

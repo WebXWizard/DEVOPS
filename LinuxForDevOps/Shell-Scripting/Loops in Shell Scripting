@@ -1,0 +1,22 @@
+# For Loops
+for i in {1..5}; do
+    echo "Iteration $i"
+done
+
+for file in *.txt; do
+    echo "Processing $file"
+    wc -l "$file"
+done
+
+# While Loops
+counter=1
+while [ $counter -le 10 ]; do
+    echo "Count: $counter"
+    counter=$((counter + 1))
+done
+
+# Until Loops
+until ping -c 1 google.com &> /dev/null; do
+    echo "Waiting for internet connection..."
+    sleep 5
+done

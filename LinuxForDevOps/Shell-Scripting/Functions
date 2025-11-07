@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# Function Definition
+greet_user() {
+    local name=$1
+    echo "Hello, $name! Welcome to DevOps."
+}
+
+# Function with Return Value
+calculate_sum() {
+    local num1=$1
+    local num2=$2
+    local result=$((num1 + num2))
+    echo $result
+}
+
+# Function with Multiple Returns
+get_system_info() {
+    echo "$(hostname)"
+    echo "$(uptime)"
+    echo "$(free -h)"
+}
+
+# Function Calls
+greet_user "John"
+SUM=$(calculate_sum 10 20)
+echo "Sum: $SUM"
+
+read hostname_info uptime_info memory_info << $(get_system_info)
+echo "Host: $hostname_info"
+echo "Uptime: $uptime_info"

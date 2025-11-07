@@ -1,0 +1,44 @@
+#!/bin/bash                              # Shebang line
+
+# Variables
+NAME="John Doe"
+AGE=25
+CURRENT_DATE=$(date +%Y-%m-%d)
+echo "Hello, $NAME. Today is $CURRENT_DATE"
+
+# Arrays
+FRUITS=("apple" "banana" "orange")
+echo "First fruit: ${FRUITS[0]}"
+echo "All fruits: ${FRUITS[@]}"
+
+# User Input
+echo "Enter your name:"
+read USER_NAME
+echo "Hello, $USER_NAME!"
+
+# Conditional Statements
+if [ $AGE -ge 18 ]; then
+    echo "You are an adult"
+else
+    echo "You are a minor"
+fi
+
+# File Testing
+if [ -f "file.txt" ]; then
+    echo "File exists"
+else
+    echo "File does not exist"
+fi
+
+# Case Statements
+case $FRUIT in
+    "apple")
+        echo "It's an apple"
+        ;;
+    "banana")
+        echo "It's a banana"
+        ;;
+    *)
+        echo "Unknown fruit"
+        ;;
+esac

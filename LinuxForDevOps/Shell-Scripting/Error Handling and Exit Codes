@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# Exit codes
+# 0 = Success
+# 1-255 = Error codes
+
+command_that_might_fail() {
+    if some_condition; then
+        echo "Command succeeded"
+        return 0
+    else
+        echo "Command failed"
+        return 1
+    fi
+}
+
+# Using exit codes
+if command_that_might_fail; then
+    echo "Operation successful"
+else
+    echo "Operation failed"
+    exit 1
+fi
+
+# Trap errors
+set -e                                   # Exit on error
+set -u                                   # Exit on undefined variable
+set -o pipefail                          # Exit on pipe failure
+
+trap 'echo "Error occurred at line $LINENO"' ERR
+
+# Custom error function
+error_exit() {
+    echo "Error: $1" >&2
+    exit 1
+}
+
+# Usage
+if [ ! -f "important_file.txt" ]; then
+    error_exit "Required file missing: important_file.txt"
+fi

@@ -1,0 +1,66 @@
+#!/bin/bash
+# Enhanced error handling with custom error codes
+set -euo pipefail
+
+# Error codes
+readonly E_SUCCESS=0
+readonly E_FILE_NOT_FOUND=1
+readonly E_PERMISSION_DENIED=2
+readonly E_INVALID_INPUT=3
+readonly E_SYSTEM_ERROR=4
+
+# Custom error handler
+error_exit() {
+    local exit_code=${2:-$E_SYSTEM_ERROR}
+    local error_message="$1"
+    
+    log_error "FATAL: $error_message"
+    log_error "Script failed at line $LINENO"
+    log_error "Exit code: $exit_code"
+    
+    cleanup_on_exit
+    exit $exit_code
+}
+
+# Cleanup function
+cleanup_on_exit() {
+    log_info "Performing cleanup..."
+    
+    # Remove temporary files
+    [ -f "$TEMP_FILE" ] && rm -f "$TEMP_FILE"
+    
+    # Stop background processes
+    [ -n "${BACKGROUND_PID:-}" ] && kill $BACKGROUND_PID 2>/dev/null
+    
+    # Restore original working directory
+    [ -n "${ORIGINAL_DIR:-}" ] && cd "$ORIGINAL_DIR"
+}
+
+# Trap for cleanup
+trap cleanup_on_exit EXIT
+trap 'error_exit "Script interrupted" $E_SYSTEM_ERROR' INT TERM
+
+# Validation framework
+validate_input() {
+    local input="$1"
+    local validation_type="$2"
+    local error_message="$3"
+    
+    case $validation_type in
+        "file_exists")
+            [ -f "$input" ] || error_exit "$error_message" $E_FILE_NOT_FOUND
+            ;;
+        "dir_exists")
+            [ -d "$input" ] || error_exit "$error_message" $E_FILE_NOT_FOUND
+            ;;
+        "number")
+            [[ $input =~ ^[0-9]+$ ]] || error_exit "$error_message" $E_INVALID_INPUT
+            ;;
+        "non_empty")
+            [ -n "$input" ] || error_exit "$error_message" $E_INVALID_INPUT
+            ;;
+        "path_absolute")
+            [[ $input = /* ]] || error_exit "$error_message" $E_INVALID_INPUT
+            ;;
+    esac
+}

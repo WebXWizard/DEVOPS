@@ -1,0 +1,72 @@
+#!/bin/bash
+
+# Run commands in parallel
+run_parallel() {
+    local commands=("$@")
+    local pids=()
+    
+    for cmd in "${commands[@]}"; do
+        eval "$cmd" &
+        pids+=($!)
+    done
+    
+    # Wait for all processes
+    for pid in "${pids[@]}"; do
+        wait "$pid"
+    done
+}
+
+# Process with timeout
+run_with_timeout() {
+    local command="$1"
+    local timeout="$2"
+    
+    eval "$command" &
+    local pid=$!
+    
+    (
+        sleep "$timeout"
+        kill "$pid" 2>/dev/null
+    ) &
+    local timer_pid=$!
+    
+    wait "$pid"
+    local exit_code=$?
+    kill "$timer_pid" 2>/dev/null
+    wait "$timer_pid" 2>/dev/null
+    
+    return $exit_code
+}
+
+# Worker pool implementation
+worker_pool() {
+    local task_function="$1"
+    local max_workers="$2"
+    shift 2
+    local tasks=("$@")
+    local active_workers=0
+    local task_index=0
+    
+    while [ $task_index -lt ${#tasks[@]} ] || [ $active_workers -gt 0 ]; do
+        # Start new workers if possible
+        while [ $active_workers -lt $max_workers ] && [ $task_index -lt ${#tasks[@]} ]; do
+            local task="${tasks[$task_index]}"
+            "$task_function" "$task" &
+            local pid=$!
+            active_workers=$((active_workers + 1))
+            task_index=$((task_index + 1))
+        done
+        
+        # Wait for any worker to finish
+        wait -n
+        local finished_pid=$!
+        
+        # Find which task finished
+        for pid in $(jobs -p); do
+            if [ $pid -eq $finished_pid ]; then
+                active_workers=$((active_workers - 1))
+                break
+            fi
+        done
+    done
+}
